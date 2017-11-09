@@ -1,4 +1,4 @@
-import pygame, sys
+import pygame, sys, creatures
 from pygame.locals import *
 
 #Global variables representing window dimensions
@@ -16,8 +16,16 @@ WHITE = (255,255,255)
 #Define our desired FPS
 FPS = 60
 
+#Draws any creature
+def drawCreature(creature):
+    pygame.draw.rect(DRAWSURF,creature.color,creature.rect)
+    
 #Main function
 def main():
+    global WINDOWSURF, DRAWSURF
+    mybug = creatures.BlockBug(20,20,10,10)
+    myfood = creatures.DeadBug(200,100)
+
     pygame.init()
     WINDOWSURF = pygame.display.set_mode((WINDOWWIDTH,WINDOWHEIGHT))
     DRAWSURF = pygame.Surface((WINDOWWIDTH,WINDOWHEIGHT))
@@ -31,6 +39,8 @@ def main():
                 pygame.quit()
                 sys.exit()
 
+        drawCreature(mybug)
+        drawCreature(myfood)
         WINDOWSURF.blit(DRAWSURF,(0,0))
         pygame.display.update()
         clock.tick(FPS)
