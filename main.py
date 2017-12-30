@@ -22,18 +22,32 @@ def drawCreature(creature):
     pygame.draw.rect(DRAWSURF,creature.color,creature.rect)
 
 #updates internal game state
-def updateCreatures(mybug):
-    mybug.step(200,150)
-    
+def updateCreatures(clist, food):
+    for bug in clist:
+        bug.step(food.pos.x,food.pos.y)
+
+def createCreatures(amt):
+    clist = []
+    for i in range(amt):
+        mybug = creatures.BlockBug(20,20,10,10)
+        mybug.setBoundsPos(0,0,WINDOWWIDTH-10,WINDOWHEIGHT-10)
+        mybug.setBoundsVel(2,2)
+        mybug.setBoundsAcc(1,1)
+
+        clist.append(mybug)
+
+    return clist
+        
 #Main function
 def main():
     global WINDOWSURF, DRAWSURF
 
+    generation = 0
+    epoch = 0
+    max_epoch = 500
+    pop_size = 10
     #create creatures and food
-    mybug = creatures.BlockBug(20,20,10,10)
-    mybug.setBoundsPos(0,0,WINDOWWIDTH-10,WINDOWHEIGHT-10)
-    mybug.setBoundsVel(2,2)
-    mybug.setBoundsAcc(1,1)
+    creature_list = createCreatures(pop_size)
     myfood = creatures.DeadBug(200,150)
 
     pygame.init()
@@ -41,6 +55,12 @@ def main():
     DRAWSURF = pygame.Surface((WINDOWWIDTH,WINDOWHEIGHT))
     DRAWSURF.fill(BLACK)
     pygame.display.set_caption("Food Finder")
+
+    basicfont = pygame.font.SysFont(None, 20)
+    text = basicfont.render("Generation: " + str(generation) + "   Epoch: "+ str(epoch),
+                            True, (255,255,255), (0,0,0))
+    textrect = pygame.Rect(150,0,150,20)
+    
     clock = pygame.time.Clock()
     
     while True:
@@ -51,19 +71,29 @@ def main():
 
             if event.type == KEYUP:
                 if event.key == K_SPACE:
-                    mybug = creatures.BlockBug(20,20,10,10)
-                    mybug.setBoundsPos(0,0,WINDOWWIDTH-10,WINDOWHEIGHT-10)
-                    mybug.setBoundsVel(2,2)
-                    mybug.setBoundsAcc(1,1)
+                    creature_list = createCreatures(pop_size)
 
-        updateCreatures(mybug)
+        updateCreatures(creature_list, myfood)
         
         DRAWSURF.fill(BLACK)
-        drawCreature(mybug)
+        epoch += 1
+        text = basicfont.render("Generation: " + str(generation) + "   Epoch: "+ str(epoch),
+                            True, (255,255,255), (0,0,0))
+        DRAWSURF.blit(text,textrect)
+        
+        for bug in creature_list:
+            drawCreature(bug)
         drawCreature(myfood)
+        
         WINDOWSURF.blit(DRAWSURF,(0,0))
         pygame.display.update()
         clock.tick(FPS)
+
+        if epoch >= max_epoch:
+            for bug in creature_list:
+                print bug.fitness(myfood.pos.x,myfood.pos.y)
+            pygame.quit()
+            sys.exit()
 
 if __name__ == '__main__':
     main()

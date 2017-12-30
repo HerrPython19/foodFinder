@@ -17,6 +17,9 @@ class Bug:
         self.color = color
         self.rect = pygame.Rect(x, y, width, height)
 
+    def step(self):
+        pass
+
 class DeadBug(Bug):
     def __init__(self, x, y):
         Bug.__init__(self, x, y, 5, 5, GREEN)
@@ -50,4 +53,10 @@ class BlockBug(Bug):
     def randomNet(self):
         net = CreatureNet()
         return net
+
+    def fitness(self, foodx, foody):
+        diffx = self.pos.x-foodx
+        diffy = self.pos.y-foody
+
+        return (diffx*diffx)+(diffy*diffy)
         
