@@ -3,7 +3,7 @@ from keras.models import Sequential, model_from_json
 from keras.layers import Dense
 from vector import Vector
 
-numpy.random.seed(1)
+#numpy.random.seed(1)
 
 class CreatureNet:
     def __init__(self):
@@ -26,3 +26,11 @@ class CreatureNet:
     def randomizeWeights(self):
         #use only after the net has been built
         pass
+
+    def predict(self, bugx, bugy, foodx, foody):
+        inx = numpy.array([[bugx, bugy]])
+        iny = numpy.array([[foodx, foody]])
+        predictx = self.xmodel.predict(inx)
+        predicty = self.ymodel.predict(iny)
+
+        return predictx, predicty

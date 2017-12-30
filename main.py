@@ -22,8 +22,8 @@ def drawCreature(creature):
     pygame.draw.rect(DRAWSURF,creature.color,creature.rect)
 
 #updates internal game state
-def updateCreatures():
-    pass
+def updateCreatures(mybug):
+    mybug.step(200,100)
     
 #Main function
 def main():
@@ -33,7 +33,7 @@ def main():
     mybug = creatures.BlockBug(20,20,10,10)
     mybug.setBoundsPos(0,0,WINDOWWIDTH-10,WINDOWHEIGHT-10)
     mybug.setBoundsVel(2,2)
-    mybug.setBoundsAcc(.25,.25)
+    mybug.setBoundsAcc(1,1)
     myfood = creatures.DeadBug(200,100)
 
     pygame.init()
@@ -49,7 +49,14 @@ def main():
                 pygame.quit()
                 sys.exit()
 
-        updateCreatures()
+            if event.type == KEYUP:
+                if event.key == K_SPACE:
+                    mybug = creatures.BlockBug(20,20,10,10)
+                    mybug.setBoundsPos(0,0,WINDOWWIDTH-10,WINDOWHEIGHT-10)
+                    mybug.setBoundsVel(2,2)
+                    mybug.setBoundsAcc(1,1)
+
+        updateCreatures(mybug)
         
         DRAWSURF.fill(BLACK)
         drawCreature(mybug)

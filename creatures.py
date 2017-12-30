@@ -1,5 +1,6 @@
 import pygame, numpy, pickle, traceback
 from vector import Vector
+from simpleNets import CreatureNet
 
 #Color globals
 BLACK = (0,0,0)
@@ -35,11 +36,18 @@ class BlockBug(Bug):
     def setBoundsAcc(self, x, y):
         self.acc.bound(x,y)
 
-    def step(self):
+    def step(self, foodx, foody):
+        newacc = self.net.predict(self.pos.x,self.pos.y,foodx,foody)
+        self.acc = Vector(newacc[0][0][0],newacc[1][0][0])
+        self.acc.x *= .25
+        self.acc.y *= .25
+        
         self.vel.addV(self.acc)
         self.pos.addV(self.vel)
         self.rect.x = self.pos.x
         self.rect.y = self.pos.y
 
     def randomNet(self):
-        pass
+        net = CreatureNet()
+        return net
+        
