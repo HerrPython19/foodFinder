@@ -20,6 +20,10 @@ FPS = 60
 #Draws any creature
 def drawCreature(creature):
     pygame.draw.rect(DRAWSURF,creature.color,creature.rect)
+
+#updates internal game state
+def updateCreatures():
+    pass
     
 #Main function
 def main():
@@ -45,6 +49,8 @@ def main():
                 pygame.quit()
                 sys.exit()
 
+        updateCreatures()
+        
         DRAWSURF.fill(BLACK)
         drawCreature(mybug)
         drawCreature(myfood)

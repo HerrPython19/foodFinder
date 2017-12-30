@@ -23,6 +23,7 @@ class DeadBug(Bug):
 class BlockBug(Bug):
     def __init__(self, x, y, width, height, color=WHITE):
         Bug.__init__(self, x, y, width, height, color)
+        self.net = self.randomNet()
         
     def setBoundsPos(self, minx, miny, maxx, maxy):
         self.pos.lBound(minx,miny)
@@ -39,3 +40,6 @@ class BlockBug(Bug):
         self.pos.addV(self.vel)
         self.rect.x = self.pos.x
         self.rect.y = self.pos.y
+
+    def randomNet(self):
+        pass
