@@ -12,15 +12,17 @@ class CreatureNet:
         self.buildNet()
 
     def buildNet(self):
-        self.xmodel.add(Dense(units=2, input_dim=2, activation='relu'))
+        self.xmodel.add(Dense(units=8, input_dim=2, activation='relu'))
+        self.xmodel.add(Dense(units=4, activation='relu'))
         self.xmodel.add(Dense(units=1, activation='tanh'))
 
-        self.ymodel.add(Dense(units=2, input_dim=2, activation='relu'))
+        self.ymodel.add(Dense(units=8, input_dim=2, activation='relu'))
+        self.ymodel.add(Dense(units=4, activation='relu'))
         self.ymodel.add(Dense(units=1, activation='tanh'))
 
-        self.xmodel.compile(loss='mean_squared_error',optimizer='adam',
+        self.xmodel.compile(loss='binary_crossentropy',optimizer='adam',
                             metrics=['accuracy'])
-        self.ymodel.compile(loss='mean_squared_error',optimizer='adam',
+        self.ymodel.compile(loss='binary_crossentropy',optimizer='adam',
                             metrics=['accuracy'])
 
     def randomizeWeights(self):
@@ -28,8 +30,8 @@ class CreatureNet:
         pass
 
     def predict(self, bugx, bugy, foodx, foody):
-        inx = numpy.array([[bugx, bugy]])
-        iny = numpy.array([[foodx, foody]])
+        inx = numpy.array([[bugx, foodx]])
+        iny = numpy.array([[bugy, foody]])
         predictx = self.xmodel.predict(inx)
         predicty = self.ymodel.predict(iny)
 

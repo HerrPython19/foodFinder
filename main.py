@@ -23,7 +23,7 @@ def drawCreature(creature):
 
 #updates internal game state
 def updateCreatures(mybug):
-    mybug.step(200,100)
+    mybug.step(200,150)
     
 #Main function
 def main():
@@ -34,7 +34,7 @@ def main():
     mybug.setBoundsPos(0,0,WINDOWWIDTH-10,WINDOWHEIGHT-10)
     mybug.setBoundsVel(2,2)
     mybug.setBoundsAcc(1,1)
-    myfood = creatures.DeadBug(200,100)
+    myfood = creatures.DeadBug(200,150)
 
     pygame.init()
     WINDOWSURF = pygame.display.set_mode((WINDOWWIDTH,WINDOWHEIGHT))
