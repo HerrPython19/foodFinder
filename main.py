@@ -1,5 +1,6 @@
 import pygame, sys, creatures
 from pygame.locals import *
+#from nets import CreatureNet
 
 #Global variables representing window dimensions
 WINDOWWIDTH = 400
@@ -23,7 +24,12 @@ def drawCreature(creature):
 #Main function
 def main():
     global WINDOWSURF, DRAWSURF
+
+    #create creatures and food
     mybug = creatures.BlockBug(20,20,10,10)
+    mybug.setBoundsPos(0,0,WINDOWWIDTH-10,WINDOWHEIGHT-10)
+    mybug.setBoundsVel(2,2)
+    mybug.setBoundsAcc(.25,.25)
     myfood = creatures.DeadBug(200,100)
 
     pygame.init()
@@ -32,13 +38,14 @@ def main():
     DRAWSURF.fill(BLACK)
     pygame.display.set_caption("Food Finder")
     clock = pygame.time.Clock()
-
+    
     while True:
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
 
+        DRAWSURF.fill(BLACK)
         drawCreature(mybug)
         drawCreature(myfood)
         WINDOWSURF.blit(DRAWSURF,(0,0))
