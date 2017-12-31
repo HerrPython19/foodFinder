@@ -10,6 +10,7 @@ class CreatureNet:
         self.xmodel = Sequential()
         self.ymodel = Sequential()
         self.buildNet()
+        
 
     def buildNet(self):
         #self.xmodel.add(Dense(units=8, input_dim=2, activation='relu'))

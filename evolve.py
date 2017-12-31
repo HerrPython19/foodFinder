@@ -1,10 +1,9 @@
-import pygame, sys, creatures, random, numpy
+import pygame, sys, creatures, random, numpy, pickle, time
 from pygame.locals import *
-#from nets import CreatureNet
 
 #Global variables representing window dimensions
 WINDOWWIDTH = 400
-WINDOWHEIGHT = 300
+WINDOWHEIGHT = 400
 
 #Global variable for top-level surface
 WINDOWSURF = None
@@ -43,11 +42,14 @@ def selection(clist):
     clist = sorted(clist, key = lambda x: x.fitness())
     clist = clist[:4]
 
-    newlist = createCreatures(4,clist[0].food)
     for i in range(4):
-        newlist[i].net = clist[i].net
+        clist[i].pos.set(10,10)
+        clist[i].vel.set(0,0)
+        clist[i].acc.set(0,0)
+        clist[i].rect.top = 10
+        clist[i].rect.left = 10
     
-    return newlist
+    return clist
 
 def crossover(parents):
     clist = []
@@ -130,9 +132,19 @@ def main():
     epoch = 0
     max_epoch = 500
     pop_size = 10
+
     #create creatures and food
-    myfood = creatures.DeadBug(200,150)
-    creature_list = createCreatures(pop_size, myfood)
+    myfood = creatures.DeadBug(200,200)
+    #saved = raw_input("Use saved population? (y/n): ")
+    saved = "n"
+    if saved == "y":
+        f = open("pop.ulation","rb")
+        creature_list = pickle.load(f)
+        f.close()
+        for c in creature_list:
+            c.food = myfood
+    else:
+        creature_list = createCreatures(pop_size, myfood)
 
     pygame.init()
     WINDOWSURF = pygame.display.set_mode((WINDOWWIDTH,WINDOWHEIGHT))
@@ -143,13 +155,19 @@ def main():
     basicfont = pygame.font.SysFont(None, 20)
     text = basicfont.render("Generation: " + str(generation) + "   Epoch: "+ str(epoch),
                             True, (255,255,255), (0,0,0))
-    textrect = pygame.Rect(150,0,150,20)
+    textrect = pygame.Rect(210,0,150,20)
     
     clock = pygame.time.Clock()
-    
+
+    start_time = time.time()
     while True:
         for event in pygame.event.get():
             if event.type == QUIT:
+                for c in creature_list:
+                    c.food = None
+                f = open("pop.ulation","wb")
+                #pickle.dump(creature_list,f)
+                f.close()
                 pygame.quit()
                 sys.exit()
 
@@ -174,12 +192,22 @@ def main():
         clock.tick(FPS)
 
         if epoch >= max_epoch:
+            end_time = time.time()
+            print "Time: " + str(end_time-start_time)
             parents = selection(creature_list)
             new_creatures = crossover(parents)
             mutate(new_creatures)
+            try:
+                K.clear_session()
+            except:
+                pass
             creature_list = new_creatures
             epoch = 0
             generation += 1
+            start_time = time.time()
 
 if __name__ == '__main__':
+    print "CURRENT BUG: Program gets slower every generation. May have to do with breeding."
+    print "Narrowed bug down to issue with keras. Online results suggest keras.backend.clear_session()",
+    print "will clear memory. However, this throws an exception on my machine."
     main()
