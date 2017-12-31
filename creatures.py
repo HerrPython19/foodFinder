@@ -25,8 +25,9 @@ class DeadBug(Bug):
         Bug.__init__(self, x, y, 5, 5, GREEN)
 
 class BlockBug(Bug):
-    def __init__(self, x, y, width, height, color=WHITE):
+    def __init__(self, x, y, width, height, food, color=WHITE):
         Bug.__init__(self, x, y, width, height, color)
+        self.food = food
         self.net = self.randomNet()
         
     def setBoundsPos(self, minx, miny, maxx, maxy):
@@ -39,8 +40,9 @@ class BlockBug(Bug):
     def setBoundsAcc(self, x, y):
         self.acc.bound(x,y)
 
-    def step(self, foodx, foody):
-        newacc = self.net.predict(self.pos.x,self.pos.y,foodx,foody)
+    def step(self):
+        newacc = self.net.predict(self.pos.x,self.pos.y,
+                                  self.food.pos.x,self.food.pos.y)
         self.acc = Vector(newacc[0][0][0],newacc[1][0][0])
         self.acc.x *= .25
         self.acc.y *= .25
@@ -54,9 +56,9 @@ class BlockBug(Bug):
         net = CreatureNet()
         return net
 
-    def fitness(self, foodx, foody):
-        diffx = self.pos.x-foodx
-        diffy = self.pos.y-foody
+    def fitness(self):
+        diffx = self.pos.x-self.food.pos.x
+        diffy = self.pos.y-self.food.pos.y
 
         return (diffx*diffx)+(diffy*diffy)
         
