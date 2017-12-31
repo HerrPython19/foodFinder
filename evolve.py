@@ -42,8 +42,12 @@ def selection(clist):
     #sorts creatures by fitness and selects top 4
     clist = sorted(clist, key = lambda x: x.fitness())
     clist = clist[:4]
+
+    newlist = createCreatures(4,clist[0].food)
+    for i in range(4):
+        newlist[i].net = clist[i].net
     
-    return clist
+    return newlist
 
 def crossover(parents):
     clist = []
@@ -74,7 +78,7 @@ def crossover(parents):
         parent2_w4 = parent1.net.ymodel.get_layer(index=2).get_weights()
 
         #do crossover
-        pivot = random.randint(1,3)
+        pivot = random.randint(0,4)
         child_w1[0][0] = numpy.concatenate([parent1_w1[0][0][:pivot],parent2_w1[0][0][pivot:]])
         pivot = random.randint(0,4)
         child_w2[0][0] = numpy.concatenate([parent1_w2[0][0][:pivot],parent2_w2[0][0][pivot:]])
@@ -97,10 +101,27 @@ def crossover(parents):
 def mutate(clist):
     for creature in clist:
         w1 = creature.net.xmodel.get_layer(index=1).get_weights()
-        w2 = creature.net.xmodel.get_layer(index=1).get_weights()
-        w3 = creature.net.xmodel.get_layer(index=1).get_weights()
-        w4 = creature.net.xmodel.get_layer(index=1).get_weights()
-        
+        w2 = creature.net.xmodel.get_layer(index=2).get_weights()
+        w3 = creature.net.ymodel.get_layer(index=1).get_weights()
+        w4 = creature.net.ymodel.get_layer(index=2).get_weights()
+
+        chance = 6
+        choice = random.randint(1,chance)
+        if choice == chance:
+            mutate_index = random.randint(0,3)
+            w1[0][0][mutate_index] = (random.random()*2)-1
+            mutate_index = random.randint(0,3)
+            w2[0][mutate_index][0] = (random.random()*2)-1
+            mutate_index = random.randint(0,3)
+            w3[0][0][mutate_index] = (random.random()*2)-1
+            mutate_index = random.randint(0,3)
+            w4[0][mutate_index][0] = (random.random()*2)-1
+
+        creature.net.xmodel.get_layer(index=1).set_weights(w1)
+        creature.net.xmodel.get_layer(index=2).set_weights(w2)
+        creature.net.ymodel.get_layer(index=1).set_weights(w3)
+        creature.net.ymodel.get_layer(index=2).set_weights(w4)
+                
 #Main function
 def main():
     global WINDOWSURF, DRAWSURF
@@ -156,8 +177,9 @@ def main():
             parents = selection(creature_list)
             new_creatures = crossover(parents)
             mutate(new_creatures)
-            pygame.quit()
-            sys.exit()
+            creature_list = new_creatures
+            epoch = 0
+            generation += 1
 
 if __name__ == '__main__':
     main()
