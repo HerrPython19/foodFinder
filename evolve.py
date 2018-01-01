@@ -1,25 +1,7 @@
-import pygame, sys, creatures, random, numpy
+import pygame, creatures, random, pickle, time
 from pygame.locals import *
-#from nets import CreatureNet
-
-#Global variables representing window dimensions
-WINDOWWIDTH = 400
-WINDOWHEIGHT = 300
-
-#Global variable for top-level surface
-WINDOWSURF = None
-DRAWSURF = None
-
-#Color globals
-BLACK = (0,0,0)
-WHITE = (255,255,255)
-
-#Define our desired FPS
-FPS = 60
-
-#Draws any creature
-def drawCreature(creature):
-    pygame.draw.rect(DRAWSURF,creature.color,creature.rect)
+from sys import argv
+from numpy import concatenate
 
 #updates internal game state
 def updateCreatures(clist):
@@ -30,7 +12,7 @@ def createCreatures(amt, food):
     clist = []
     for i in range(amt):
         mybug = creatures.BlockBug(20,20,10,10, food)
-        mybug.setBoundsPos(0,0,WINDOWWIDTH-10,WINDOWHEIGHT-10)
+        mybug.setBoundsPos(0,0,190,190)
         mybug.setBoundsVel(2,2)
         mybug.setBoundsAcc(1,1)
 
@@ -41,20 +23,26 @@ def createCreatures(amt, food):
 def selection(clist):
     #sorts creatures by fitness and selects top 4
     clist = sorted(clist, key = lambda x: x.fitness())
-    clist = clist[:4]
+    clist = clist[:5]
 
-    newlist = createCreatures(4,clist[0].food)
-    for i in range(4):
-        newlist[i].net = clist[i].net
+    for i in range(5):
+        clist[i].pos.set(10,10)
+        clist[i].vel.set(0,0)
+        clist[i].acc.set(0,0)
+        clist[i].rect.top = 10
+        clist[i].rect.left = 10
     
-    return newlist
+    return clist
 
 def crossover(parents):
+    #need to keep clist to avoid editing original list of parents
     clist = []
+    childlist = []
     for c in parents:
         clist.append(c)
 
-    while len(clist) < 10:
+    #breeds 6 children from initial x parents
+    while len(childlist) < 50:
         parent1 = random.choice(clist)
         parent2 = random.choice(clist)
 
@@ -79,13 +67,13 @@ def crossover(parents):
 
         #do crossover
         pivot = random.randint(0,4)
-        child_w1[0][0] = numpy.concatenate([parent1_w1[0][0][:pivot],parent2_w1[0][0][pivot:]])
+        child_w1[0][0] = concatenate([parent1_w1[0][0][:pivot],parent2_w1[0][0][pivot:]])
         pivot = random.randint(0,4)
-        child_w2[0][0] = numpy.concatenate([parent1_w2[0][0][:pivot],parent2_w2[0][0][pivot:]])
+        child_w2[0][0] = concatenate([parent1_w2[0][0][:pivot],parent2_w2[0][0][pivot:]])
         pivot = random.randint(0,4)
-        child_w3[0][0] = numpy.concatenate([parent1_w3[0][0][:pivot],parent2_w3[0][0][pivot:]])
+        child_w3[0][0] = concatenate([parent1_w3[0][0][:pivot],parent2_w3[0][0][pivot:]])
         pivot = random.randint(0,4)
-        child_w4[0][0] = numpy.concatenate([parent1_w4[0][0][:pivot],parent2_w4[0][0][pivot:]])
+        child_w4[0][0] = concatenate([parent1_w4[0][0][:pivot],parent2_w4[0][0][pivot:]])
 
         #set child's weights to new weights
         child.net.xmodel.get_layer(index=1).set_weights(child_w1)
@@ -93,9 +81,9 @@ def crossover(parents):
         child.net.ymodel.get_layer(index=1).set_weights(child_w3)
         child.net.ymodel.get_layer(index=2).set_weights(child_w4)
         
-        clist.append(child)
+        childlist.append(child)
 
-    return clist
+    return childlist
 
 
 def mutate(clist):
@@ -121,65 +109,122 @@ def mutate(clist):
         creature.net.xmodel.get_layer(index=2).set_weights(w2)
         creature.net.ymodel.get_layer(index=1).set_weights(w3)
         creature.net.ymodel.get_layer(index=2).set_weights(w4)
-                
+
+def avgFitness(clist):
+    total = 0
+    divisor = 0
+    for i in clist:
+        total += i.fitness()
+        divisor += 1
+
+    return float(total)/divisor
+
+def getWeights(net):
+    weights = []
+    weights.append(net.xmodel.get_layer(index=1).get_weights())
+    weights.append(net.xmodel.get_layer(index=2).get_weights())
+    weights.append(net.ymodel.get_layer(index=1).get_weights())
+    weights.append(net.ymodel.get_layer(index=2).get_weights())
+
+    return weights
+
+def setWeights(net, weights):
+    net.xmodel.get_layer(index=1).set_weights(weights[0])
+    net.xmodel.get_layer(index=2).set_weights(weights[1])
+    net.ymodel.get_layer(index=1).set_weights(weights[2])
+    net.ymodel.get_layer(index=2).set_weights(weights[3])
+    
+def save_nets(clist):
+    #store weights of current creatures
+    weight_list = []
+    food = clist[0].food
+    amt = len(clist)
+    for c in clist:
+        weight_list.append(getWeights(c.net))
+
+    f = open("pop.ulation","wb")
+    pickle.dump(weight_list,f)
+    f.close()
+
+def save_gen(gen):
+    f = open("gen.eration", "wb")
+    pickle.dump(gen,f)
+    f.close()
+
+def load_nets():
+    f = open("pop.ulation","rb")
+    weights = pickle.load(f)
+    f.close()
+
+    return weights
+
+def load_gen():
+    f = open("gen.eration","rb")
+    gen = pickle.load(f)
+    f.close()
+
+    return gen
+        
 #Main function
 def main():
-    global WINDOWSURF, DRAWSURF
-
+    #set initial variables
     generation = 0
     epoch = 0
     max_epoch = 500
-    pop_size = 10
+    pop_size = 50
+
+    #determine if we're using saved population (-saved argument at cli)
+    if len(argv) > 1:
+        if argv[1] == "-saved":
+            saved = "y"
+            print "Using saved population."
+        else:
+            saved = "n"
+            print "Using new population."
+    else:
+        saved = "n"
+        print "Using new population."
+
     #create creatures and food
-    myfood = creatures.DeadBug(200,150)
-    creature_list = createCreatures(pop_size, myfood)
+    myfood = creatures.DeadBug(200,200)
+    if saved == "y":
+        weights = load_nets()
+        generation = load_gen()
+        creature_list = createCreatures(pop_size, myfood)
+        for i in range(len(creature_list)):
+            creature_list[i].food = myfood
+            setWeights(creature_list[i].net, weights[i])
 
-    pygame.init()
-    WINDOWSURF = pygame.display.set_mode((WINDOWWIDTH,WINDOWHEIGHT))
-    DRAWSURF = pygame.Surface((WINDOWWIDTH,WINDOWHEIGHT))
-    DRAWSURF.fill(BLACK)
-    pygame.display.set_caption("Food Finder")
+    else:
+        creature_list = createCreatures(pop_size, myfood)
 
-    basicfont = pygame.font.SysFont(None, 20)
-    text = basicfont.render("Generation: " + str(generation) + "   Epoch: "+ str(epoch),
-                            True, (255,255,255), (0,0,0))
-    textrect = pygame.Rect(150,0,150,20)
-    
-    clock = pygame.time.Clock()
-    
-    while True:
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                pygame.quit()
-                sys.exit()
-
-            if event.type == KEYUP:
-                if event.key == K_SPACE:
-                    creature_list = createCreatures(pop_size)
-
-        updateCreatures(creature_list)
-        
-        DRAWSURF.fill(BLACK)
+    #Run x Epochs of Simulation
+    print "Starting Generation", generation
+    while epoch < max_epoch:
+        if epoch % 10 == 0:
+            print "Epoch: ", epoch
+        updateCreatures(creature_list)        
         epoch += 1
-        text = basicfont.render("Generation: " + str(generation) + "   Epoch: "+ str(epoch),
-                            True, (255,255,255), (0,0,0))
-        DRAWSURF.blit(text,textrect)
-        
-        for bug in creature_list:
-            drawCreature(bug)
-        drawCreature(myfood)
-        
-        WINDOWSURF.blit(DRAWSURF,(0,0))
-        pygame.display.update()
-        clock.tick(FPS)
 
-        if epoch >= max_epoch:
-            parents = selection(creature_list)
-            new_creatures = crossover(parents)
-            mutate(new_creatures)
-            creature_list = new_creatures
-            epoch = 0
-            generation += 1
+    print "Finished Simulation"
+    print "Average fitness: " + str(avgFitness(creature_list))
 
-if __name__ == '__main__':
-    main()
+    print "Breeding..."
+    #Breed new population, and mutate
+    parents = selection(creature_list)
+    print "Parents Selected"
+    new_creatures = crossover(parents)
+    print "Children Bred"
+    mutate(new_creatures)
+    print "Children Mutated"
+            
+    creature_list = new_creatures
+    epoch = 0
+    generation += 1
+    
+    save_nets(creature_list)
+    print "Saved Weights of Neural Networks to Disk"
+    save_gen(generation)
+    print "Saved Generation to Disk"
+
+main()
