@@ -1,5 +1,7 @@
-import pygame, sys, creatures, random, numpy, pickle, time, traceback
+import pygame, creatures, random, pickle, time
 from pygame.locals import *
+from sys import argv
+from numpy import concatenate
 
 #updates internal game state
 def updateCreatures(clist):
@@ -21,9 +23,9 @@ def createCreatures(amt, food):
 def selection(clist):
     #sorts creatures by fitness and selects top 4
     clist = sorted(clist, key = lambda x: x.fitness())
-    clist = clist[:4]
+    clist = clist[:5]
 
-    for i in range(4):
+    for i in range(5):
         clist[i].pos.set(10,10)
         clist[i].vel.set(0,0)
         clist[i].acc.set(0,0)
@@ -39,8 +41,8 @@ def crossover(parents):
     for c in parents:
         clist.append(c)
 
-    #breeds 6 children from initial 4 parents
-    while len(childlist) < 10:
+    #breeds 6 children from initial x parents
+    while len(childlist) < 50:
         parent1 = random.choice(clist)
         parent2 = random.choice(clist)
 
@@ -65,13 +67,13 @@ def crossover(parents):
 
         #do crossover
         pivot = random.randint(0,4)
-        child_w1[0][0] = numpy.concatenate([parent1_w1[0][0][:pivot],parent2_w1[0][0][pivot:]])
+        child_w1[0][0] = concatenate([parent1_w1[0][0][:pivot],parent2_w1[0][0][pivot:]])
         pivot = random.randint(0,4)
-        child_w2[0][0] = numpy.concatenate([parent1_w2[0][0][:pivot],parent2_w2[0][0][pivot:]])
+        child_w2[0][0] = concatenate([parent1_w2[0][0][:pivot],parent2_w2[0][0][pivot:]])
         pivot = random.randint(0,4)
-        child_w3[0][0] = numpy.concatenate([parent1_w3[0][0][:pivot],parent2_w3[0][0][pivot:]])
+        child_w3[0][0] = concatenate([parent1_w3[0][0][:pivot],parent2_w3[0][0][pivot:]])
         pivot = random.randint(0,4)
-        child_w4[0][0] = numpy.concatenate([parent1_w4[0][0][:pivot],parent2_w4[0][0][pivot:]])
+        child_w4[0][0] = concatenate([parent1_w4[0][0][:pivot],parent2_w4[0][0][pivot:]])
 
         #set child's weights to new weights
         child.net.xmodel.get_layer(index=1).set_weights(child_w1)
@@ -169,11 +171,11 @@ def main():
     generation = 0
     epoch = 0
     max_epoch = 500
-    pop_size = 10
+    pop_size = 50
 
     #determine if we're using saved population (-saved argument at cli)
-    if len(sys.argv) > 1:
-        if sys.argv[1] == "-saved":
+    if len(argv) > 1:
+        if argv[1] == "-saved":
             saved = "y"
             print "Using saved population."
         else:
@@ -196,31 +198,33 @@ def main():
     else:
         creature_list = createCreatures(pop_size, myfood)
 
-    print "Starting new generation"
-    start_time = time.time()
+    #Run x Epochs of Simulation
+    print "Starting Generation", generation
     while epoch < max_epoch:
+        if epoch % 10 == 0:
+            print "Epoch: ", epoch
         updateCreatures(creature_list)        
         epoch += 1
 
-    end_time = time.time()
-    print "Time: " + str(end_time-start_time)
+    print "Finished Simulation"
     print "Average fitness: " + str(avgFitness(creature_list))
-    
+
+    print "Breeding..."
+    #Breed new population, and mutate
     parents = selection(creature_list)
+    print "Parents Selected"
     new_creatures = crossover(parents)
+    print "Children Bred"
     mutate(new_creatures)
-    save_nets(new_creatures)
+    print "Children Mutated"
             
     creature_list = new_creatures
     epoch = 0
     generation += 1
-    save_gen(generation)
-    start_time = time.time()
     
     save_nets(creature_list)
+    print "Saved Weights of Neural Networks to Disk"
     save_gen(generation)
+    print "Saved Generation to Disk"
 
-print "CURRENT BUG: Program gets slower every generation. May have to do with breeding."
-print "Narrowed bug down to issue with keras. Online results suggest keras.backend.clear_session()",
-print "will clear memory. However, this throws an exception on my machine."
 main()
