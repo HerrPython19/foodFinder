@@ -1,25 +1,6 @@
 import pygame, sys, creatures, random, numpy, pickle, time, traceback
 from pygame.locals import *
 
-#Global variables representing window dimensions
-WINDOWWIDTH = 400
-WINDOWHEIGHT = 400
-
-#Global variable for top-level surface
-WINDOWSURF = None
-DRAWSURF = None
-
-#Color globals
-BLACK = (0,0,0)
-WHITE = (255,255,255)
-
-#Define our desired FPS
-FPS = 60
-
-#Draws any creature
-def drawCreature(creature):
-    pygame.draw.rect(DRAWSURF,creature.color,creature.rect)
-
 #updates internal game state
 def updateCreatures(clist):
     for bug in clist:
@@ -29,7 +10,7 @@ def createCreatures(amt, food):
     clist = []
     for i in range(amt):
         mybug = creatures.BlockBug(20,20,10,10, food)
-        mybug.setBoundsPos(0,0,WINDOWWIDTH-10,WINDOWHEIGHT-10)
+        mybug.setBoundsPos(0,0,190,190)
         mybug.setBoundsVel(2,2)
         mybug.setBoundsAcc(1,1)
 
@@ -127,6 +108,15 @@ def mutate(clist):
         creature.net.ymodel.get_layer(index=1).set_weights(w3)
         creature.net.ymodel.get_layer(index=2).set_weights(w4)
 
+def avgFitness(clist):
+    total = 0
+    divisor = 0
+    for i in clist:
+        total += i.fitness()
+        divisor += 1
+
+    return float(total)/divisor
+
 def getWeights(net):
     weights = []
     weights.append(net.xmodel.get_layer(index=1).get_weights())
@@ -175,8 +165,6 @@ def load_gen():
         
 #Main function
 def main():
-    global WINDOWSURF, DRAWSURF
-
     generation = 0
     epoch = 0
     max_epoch = 500
@@ -196,65 +184,25 @@ def main():
     else:
         creature_list = createCreatures(pop_size, myfood)
 
-    #pygame.init()
-    #WINDOWSURF = pygame.display.set_mode((WINDOWWIDTH,WINDOWHEIGHT))
-    #DRAWSURF = pygame.Surface((WINDOWWIDTH,WINDOWHEIGHT))
-    #DRAWSURF.fill(BLACK)
-    #pygame.display.set_caption("Food Finder")
-
-    #basicfont = pygame.font.SysFont(None, 20)
-    #text = basicfont.render("Generation: " + str(generation) + "   Epoch: "+ str(epoch),True, (255,255,255), (0,0,0))
-    #textrect = pygame.Rect(210,0,150,20)
-    
-    #clock = pygame.time.Clock()
-
     start_time = time.time()
-    while True:
-        """
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                for c in creature_list:
-                    c.food = None
-                #save_nets(creature_list)
-                #save_gen(generation)
-                pygame.quit()
-                sys.exit()
-
-            if event.type == KEYUP:
-                if event.key == K_SPACE:
-                    creature_list = createCreatures(pop_size)"""
-
-        updateCreatures(creature_list)
-        
-        #DRAWSURF.fill(BLACK)
+    while epoch < max_epoch:
+        updateCreatures(creature_list)        
         epoch += 1
-        #text = basicfont.render("Generation: " + str(generation) + "   Epoch: "+ str(epoch),True, (255,255,255), (0,0,0))
-        #DRAWSURF.blit(text,textrect)
-        
-        """for bug in creature_list:
-            drawCreature(bug)
-        drawCreature(myfood)"""
-        
-        #WINDOWSURF.blit(DRAWSURF,(0,0))
-        #pygame.display.update()
-        #clock.tick(FPS)
 
-        if epoch >= max_epoch:
-            end_time = time.time()
-            print "Time: " + str(end_time-start_time)
-            parents = selection(creature_list)
-            new_creatures = crossover(parents)
-            mutate(new_creatures)
-            save_nets(new_creatures)
+    end_time = time.time()
+    print "Time: " + str(end_time-start_time)
+    print "Average fitness: " + str(avgFitness(creature_list))
+    
+    parents = selection(creature_list)
+    new_creatures = crossover(parents)
+    mutate(new_creatures)
+    save_nets(new_creatures)
             
-            creature_list = new_creatures
-            epoch = 0
-            generation += 1
-            save_gen(generation)
-            start_time = time.time()
-
-            #pygame.quit()
-            sys.exit()
+    creature_list = new_creatures
+    epoch = 0
+    generation += 1
+    save_gen(generation)
+    start_time = time.time()
 
 if __name__ == '__main__':
     print "CURRENT BUG: Program gets slower every generation. May have to do with breeding."
