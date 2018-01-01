@@ -165,14 +165,26 @@ def load_gen():
         
 #Main function
 def main():
+    #set initial variables
     generation = 0
     epoch = 0
     max_epoch = 500
     pop_size = 10
 
+    #determine if we're using saved population (-saved argument at cli)
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "-saved":
+            saved = "y"
+            print "Using saved population."
+        else:
+            saved = "n"
+            print "Using new population."
+    else:
+        saved = "n"
+        print "Using new population."
+
     #create creatures and food
     myfood = creatures.DeadBug(200,200)
-    saved = raw_input("Use saved population? (y/n): ")
     if saved == "y":
         weights = load_nets()
         generation = load_gen()
@@ -184,6 +196,7 @@ def main():
     else:
         creature_list = createCreatures(pop_size, myfood)
 
+    print "Starting new generation"
     start_time = time.time()
     while epoch < max_epoch:
         updateCreatures(creature_list)        
@@ -203,9 +216,11 @@ def main():
     generation += 1
     save_gen(generation)
     start_time = time.time()
+    
+    save_nets(creature_list)
+    save_gen(generation)
 
-if __name__ == '__main__':
-    print "CURRENT BUG: Program gets slower every generation. May have to do with breeding."
-    print "Narrowed bug down to issue with keras. Online results suggest keras.backend.clear_session()",
-    print "will clear memory. However, this throws an exception on my machine."
-    main()
+print "CURRENT BUG: Program gets slower every generation. May have to do with breeding."
+print "Narrowed bug down to issue with keras. Online results suggest keras.backend.clear_session()",
+print "will clear memory. However, this throws an exception on my machine."
+main()
