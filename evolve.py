@@ -1,4 +1,4 @@
-import pygame, sys, creatures, random, numpy, pickle, time
+import pygame, sys, creatures, random, numpy, pickle, time, traceback
 from pygame.locals import *
 
 #Global variables representing window dimensions
@@ -52,11 +52,14 @@ def selection(clist):
     return clist
 
 def crossover(parents):
+    #need to keep clist to avoid editing original list of parents
     clist = []
+    childlist = []
     for c in parents:
         clist.append(c)
 
-    while len(clist) < 10:
+    #breeds 6 children from initial 4 parents
+    while len(childlist) < 10:
         parent1 = random.choice(clist)
         parent2 = random.choice(clist)
 
@@ -95,9 +98,9 @@ def crossover(parents):
         child.net.ymodel.get_layer(index=1).set_weights(child_w3)
         child.net.ymodel.get_layer(index=2).set_weights(child_w4)
         
-        clist.append(child)
+        childlist.append(child)
 
-    return clist
+    return childlist
 
 
 def mutate(clist):
@@ -123,7 +126,53 @@ def mutate(clist):
         creature.net.xmodel.get_layer(index=2).set_weights(w2)
         creature.net.ymodel.get_layer(index=1).set_weights(w3)
         creature.net.ymodel.get_layer(index=2).set_weights(w4)
-                
+
+def getWeights(net):
+    weights = []
+    weights.append(net.xmodel.get_layer(index=1).get_weights())
+    weights.append(net.xmodel.get_layer(index=2).get_weights())
+    weights.append(net.ymodel.get_layer(index=1).get_weights())
+    weights.append(net.ymodel.get_layer(index=2).get_weights())
+
+    return weights
+
+def setWeights(net, weights):
+    net.xmodel.get_layer(index=1).set_weights(weights[0])
+    net.xmodel.get_layer(index=2).set_weights(weights[1])
+    net.ymodel.get_layer(index=1).set_weights(weights[2])
+    net.ymodel.get_layer(index=2).set_weights(weights[3])
+    
+def save_nets(clist):
+    #store weights of current creatures
+    weight_list = []
+    food = clist[0].food
+    amt = len(clist)
+    for c in clist:
+        weight_list.append(getWeights(c.net))
+
+    f = open("pop.ulation","wb")
+    pickle.dump(weight_list,f)
+    f.close()
+
+def save_gen(gen):
+    f = open("gen.eration", "wb")
+    pickle.dump(gen,f)
+    f.close()
+
+def load_nets():
+    f = open("pop.ulation","rb")
+    weights = pickle.load(f)
+    f.close()
+
+    return weights
+
+def load_gen():
+    f = open("gen.eration","rb")
+    gen = pickle.load(f)
+    f.close()
+
+    return gen
+        
 #Main function
 def main():
     global WINDOWSURF, DRAWSURF
@@ -135,61 +184,60 @@ def main():
 
     #create creatures and food
     myfood = creatures.DeadBug(200,200)
-    #saved = raw_input("Use saved population? (y/n): ")
-    saved = "n"
+    saved = raw_input("Use saved population? (y/n): ")
     if saved == "y":
-        f = open("pop.ulation","rb")
-        creature_list = pickle.load(f)
-        f.close()
-        for c in creature_list:
-            c.food = myfood
+        weights = load_nets()
+        generation = load_gen()
+        creature_list = createCreatures(pop_size, myfood)
+        for i in range(len(creature_list)):
+            creature_list[i].food = myfood
+            setWeights(creature_list[i].net, weights[i])
+
     else:
         creature_list = createCreatures(pop_size, myfood)
 
-    pygame.init()
-    WINDOWSURF = pygame.display.set_mode((WINDOWWIDTH,WINDOWHEIGHT))
-    DRAWSURF = pygame.Surface((WINDOWWIDTH,WINDOWHEIGHT))
-    DRAWSURF.fill(BLACK)
-    pygame.display.set_caption("Food Finder")
+    #pygame.init()
+    #WINDOWSURF = pygame.display.set_mode((WINDOWWIDTH,WINDOWHEIGHT))
+    #DRAWSURF = pygame.Surface((WINDOWWIDTH,WINDOWHEIGHT))
+    #DRAWSURF.fill(BLACK)
+    #pygame.display.set_caption("Food Finder")
 
-    basicfont = pygame.font.SysFont(None, 20)
-    text = basicfont.render("Generation: " + str(generation) + "   Epoch: "+ str(epoch),
-                            True, (255,255,255), (0,0,0))
-    textrect = pygame.Rect(210,0,150,20)
+    #basicfont = pygame.font.SysFont(None, 20)
+    #text = basicfont.render("Generation: " + str(generation) + "   Epoch: "+ str(epoch),True, (255,255,255), (0,0,0))
+    #textrect = pygame.Rect(210,0,150,20)
     
-    clock = pygame.time.Clock()
+    #clock = pygame.time.Clock()
 
     start_time = time.time()
     while True:
+        """
         for event in pygame.event.get():
             if event.type == QUIT:
                 for c in creature_list:
                     c.food = None
-                f = open("pop.ulation","wb")
-                #pickle.dump(creature_list,f)
-                f.close()
+                #save_nets(creature_list)
+                #save_gen(generation)
                 pygame.quit()
                 sys.exit()
 
             if event.type == KEYUP:
                 if event.key == K_SPACE:
-                    creature_list = createCreatures(pop_size)
+                    creature_list = createCreatures(pop_size)"""
 
         updateCreatures(creature_list)
         
-        DRAWSURF.fill(BLACK)
+        #DRAWSURF.fill(BLACK)
         epoch += 1
-        text = basicfont.render("Generation: " + str(generation) + "   Epoch: "+ str(epoch),
-                            True, (255,255,255), (0,0,0))
-        DRAWSURF.blit(text,textrect)
+        #text = basicfont.render("Generation: " + str(generation) + "   Epoch: "+ str(epoch),True, (255,255,255), (0,0,0))
+        #DRAWSURF.blit(text,textrect)
         
-        for bug in creature_list:
+        """for bug in creature_list:
             drawCreature(bug)
-        drawCreature(myfood)
+        drawCreature(myfood)"""
         
-        WINDOWSURF.blit(DRAWSURF,(0,0))
-        pygame.display.update()
-        clock.tick(FPS)
+        #WINDOWSURF.blit(DRAWSURF,(0,0))
+        #pygame.display.update()
+        #clock.tick(FPS)
 
         if epoch >= max_epoch:
             end_time = time.time()
@@ -197,14 +245,16 @@ def main():
             parents = selection(creature_list)
             new_creatures = crossover(parents)
             mutate(new_creatures)
-            try:
-                K.clear_session()
-            except:
-                pass
+            save_nets(new_creatures)
+            
             creature_list = new_creatures
             epoch = 0
             generation += 1
+            save_gen(generation)
             start_time = time.time()
+
+            #pygame.quit()
+            sys.exit()
 
 if __name__ == '__main__':
     print "CURRENT BUG: Program gets slower every generation. May have to do with breeding."

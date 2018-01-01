@@ -1,4 +1,5 @@
 import numpy, pickle, threading
+import tensorflow as tf
 from keras.models import Sequential, model_from_json
 from keras.layers import Dense
 from vector import Vector
@@ -11,6 +12,7 @@ class CreatureNet:
         self.food = food
         self.xmodel = Sequential()
         self.ymodel = Sequential()
+        self.graph = tf.get_default_graph()
         self.xxdata = []
         self.xydata = []
         self.yxdata = []
